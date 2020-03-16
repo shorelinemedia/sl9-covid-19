@@ -45,11 +45,17 @@
 
 .covid-19-banner .btn,
 .covid-19-banner .button {
-  margin-left: 1em;
-  color: white;
+  margin-left: 1.5em;
+  color: red;
   border-color: white;
-  background-color: inherit;
+  background-color: white;
   text-transform: uppercase;
+  font-weight: bold;
+}
+
+.covid-19-banner.kits-available .btn,
+.covid-19-banner.kits-available .button {
+  color: green;
 }
 
 @media screen and (min-width: 769px) {
