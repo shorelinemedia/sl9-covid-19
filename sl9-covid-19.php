@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19-banner
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.0
+* Version:              1.0.1
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -76,9 +76,9 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        // Get Customizer/theme mod setting for kit status
        $kits_available = get_theme_mod( 'sl9_covid_19_test_kit_status' );
        // Set default text based on customizer checkbox
-       $default_text = $kits_available ? 'Yes, we have kits available.' : 'No, we don\'t have kits available.';
+       $default_text = $kits_available ? 'Yes, we have testing kits available.' : 'Sorry, there are no testing kits available at this time.';
        // Use custom text if supplied, or else use default true/false text
-       $text = is_main_site() ? 'Please visit our location websites for test kit availability' : ( !empty( $text ) ? $text : $default_text );
+       $text = is_main_site() ? 'Please visit our location websites for test kit availability.' : ( !empty( $text ) ? $text : $default_text );
 
        $icon = file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/images/icon-medical-test.svg' );
 
