@@ -27,7 +27,7 @@ if (!function_exists( 'sl9_covid_19_customizer' ) ) {
     ) );
 
     $wp_customize->add_setting( 'sl9_covid_19_test_kit_status', array(
-      'capability' => 'edit_theme_options',
+      'capability' => 'edit_published_posts',
       'sanitize_callback' => 'sl9_covid19_sanitize_checkbox',
     ) );
 
