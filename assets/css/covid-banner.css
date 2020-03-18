@@ -35,12 +35,13 @@
 
 .covid-19-banner__icon {
   margin-right: 1em;
+  width: 100%;
+  max-width: 32px;
 }
 .covid-19-banner__icon svg {
-  width: auto;
+  width: 100%;
   max-width: none;
   height: 100%;
-  max-height: 32px;
 }
 
 .covid-19-banner .btn,
