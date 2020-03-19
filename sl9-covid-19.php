@@ -12,6 +12,13 @@
 * GitHub Plugin URI:    https://github.com/shorelinemedia/sl9-covid-19
 */
 
+define( 'SL9_COVID_19_PATH', plugin_dir_path( __FILE__ ) );
+
+// ACF Fields for the main site
+if ( is_main_site() ) {
+  include( SL9_COVID_19_PATH . 'inc/custom-fields.php' );
+}
+
 // Customizer scoped to 'editor' user role to set true/false about test kit availability
 if (!function_exists( 'sl9_covid_19_customizer' ) ) {
   function sl9_covid_19_customizer( $wp_customize ) {
