@@ -100,7 +100,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
          <div class="covid-19-banner__icon"><?php echo $icon; ?></div>
          <h2 class="covid-19-banner__title"><strong>Coronavirus Test Kits:</strong> <?php echo $text; ?></h2>
          <?php if ( !is_main_site() ) { ?>
-           <a class="btn button" href="/coronavirus-testing-kits/">Learn More</a>
+           <a class="btn button" href="/coronavirus-testing/">Learn More</a>
          <?php } // endif is main site ?>
        </aside>
 
