@@ -138,9 +138,7 @@ if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
   function sl9_coronavirus_test_kits_availability( $post_id = false ) {
     if ( !$post_id ) return;
     $kits_available = get_field( 'coronavirus_test_kits_available', $post_id );
-    $location = get_post( $post_id );
-    $network_url = network_site_url( '', 'https' );
-    $location_url = preg_replace( '/(^.*)(\.(?:com|net|org)\/?)$/i', '$1' . $location->post_name . '$2', $network_url );
+    $location_url = trailingslashit(get_field( 'visit_location', $post_id )['url']);
     $html_class = $kits_available ? 'kits-available' : 'kits-unavailable';
     $text = $kits_available ? 'Coronavirus Testing <strong>Available!</strong><br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check back tomorrow';
     ?>
