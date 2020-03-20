@@ -83,9 +83,9 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        // Get Customizer/theme mod setting for kit status
        $kits_available = get_theme_mod( 'sl9_covid_19_test_kit_status' );
        // Set default text based on customizer checkbox
-       $default_text = $kits_available ? 'Yes, we have testing kits available.' : 'Sorry, there are no testing kits available at this time.';
+       $default_text = $kits_available ? '<strong>Coronavirus Testing Available Today:</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check back tomorrow';
        // Use custom text if supplied, or else use default true/false text
-       $text = is_main_site() ? 'Please visit our location websites for test kit availability.' : ( !empty( $text ) ? $text : $default_text );
+       $text = is_main_site() ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
 
        $icon = file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/images/icon-medical-test.svg' );
 
@@ -98,9 +98,11 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
 
        <aside role="banner" class="covid-19-banner <?php echo $html_class; ?>">
          <div class="covid-19-banner__icon"><?php echo $icon; ?></div>
-         <h2 class="covid-19-banner__title"><strong>Coronavirus Test Kits:</strong> <?php echo $text; ?></h2>
-         <?php if ( !is_main_site() ) { ?>
-           <a class="btn button" href="/coronavirus-testing/">Learn More</a>
+         <h2 class="covid-19-banner__title"><?php echo $text; ?></h2>
+         <?php if ( !is_main_site() ) {
+           $button_text = $kits_available ? 'Learn More and Preregister' : 'Learn More';
+         ?>
+           <a class="btn button" href="/coronavirus-testing/"><?php echo $button_text; ?></a>
          <?php } // endif is main site ?>
        </aside>
 
