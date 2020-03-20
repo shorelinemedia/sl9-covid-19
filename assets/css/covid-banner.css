@@ -52,6 +52,7 @@
   background-color: white;
   text-transform: uppercase;
   font-weight: bold;
+  font-size: 100%;
 }
 
 .covid-19-banner.kits-available .btn,
@@ -100,4 +101,13 @@
 
 .location-kit-availability.kits-available {
 	background-color: green;
+}
+
+.location-kit-availability .btn {
+  background-color: white;
+  border-color: white;
+  color: red;
+}
+.location-kit-availability.kits-available .btn {
+  color: green;
 }

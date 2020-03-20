@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.8
+* Version:              1.0.9
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -83,7 +83,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        // Get Customizer/theme mod setting for kit status
        $kits_available = get_theme_mod( 'sl9_covid_19_test_kit_status' );
        // Set default text based on customizer checkbox
-       $default_text = $kits_available ? '<strong>Coronavirus Testing Available Today:</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check back tomorrow';
+       $default_text = $kits_available ? 'Coronavirus Testing <strong>Available Today!</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check back tomorrow';
        // Use custom text if supplied, or else use default true/false text
        $text = is_main_site() ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
 
@@ -99,7 +99,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        <aside role="banner" class="covid-19-banner <?php echo $html_class; ?>">
          <div class="covid-19-banner__icon"><?php echo $icon; ?></div>
          <h2 class="covid-19-banner__title"><?php echo $text; ?></h2>
-         <?php if ( !is_main_site() ) {
+         <?php if ( !is_main_site() && $kits_available ) {
            $button_text = $kits_available ? 'Learn More and Preregister' : 'Learn More';
          ?>
            <a class="btn button" href="/coronavirus-testing/"><?php echo $button_text; ?></a>
@@ -138,12 +138,15 @@ if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
   function sl9_coronavirus_test_kits_availability( $post_id = false ) {
     if ( !$post_id ) return;
     $kits_available = get_field( 'coronavirus_test_kits_available', $post_id );
+    $location = get_post( $post_id );
+    $network_url = network_site_url( '', 'https' );
+    $location_url = preg_replace( '/(^.*)(\.(?:com|net|org)\/?)$/i', '$1' . $location->post_name . '$2', $network_url );
     $html_class = $kits_available ? 'kits-available' : 'kits-unavailable';
-    $text = $kits_available ? 'are <strong>available!</strong>' : 'are <strong>not available</strong> at this time.';
+    $text = $kits_available ? 'Coronavirus Testing <strong>Available!</strong><br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check back tomorrow';
     ?>
 
     <div class="location-kit-availability <?php echo $html_class; ?>">
-      Coronavirus Kits <?php echo $text; ?>
+      <?php echo $text; ?>
     </div>
     <?php
 
