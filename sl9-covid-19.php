@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.10
+* Version:              1.0.11
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -45,6 +45,17 @@ if (!function_exists( 'sl9_covid_19_customizer' ) ) {
       'description' => __( 'Your website will have a banner indicating the availability of COVID-19 tests.' ),
     ) );
 
+    // Testing hours
+    $wp_customize->add_setting( 'sl9_covid_19_testing_hours', array(
+      'capability' => 'edit_published_posts'
+    ) );
+
+    $wp_customize->add_control( 'sl9_covid_19_testing_hours', array(
+      'type' => 'text',
+      'section' => 'sl9_covid_19', // Add a default or your own section
+      'label' => __( 'Hours offering testing' ),
+      'description' => __( 'Ex: 9AM - 5PM' ),
+    ) );
   }
   add_action( 'customize_register', 'sl9_covid_19_customizer' );
 }
@@ -82,8 +93,11 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        wp_enqueue_style( 'sl9_covid_19_banner' );
        // Get Customizer/theme mod setting for kit status
        $kits_available = get_theme_mod( 'sl9_covid_19_test_kit_status' );
+       // Testing Hours
+       $testing_hours  = get_theme_mod( 'sl9_covid_19_testing_hours', false );
+       $testing_time = $testing_hours ? 'today from ' . $testing_hours : 'Today';
        // Set default text based on customizer checkbox
-       $default_text = $kits_available ? 'Coronavirus Testing <strong>Available Today!</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check back tomorrow';
+       $default_text = $kits_available ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check back tomorrow';
        // Use custom text if supplied, or else use default true/false text
        $text = is_main_site() ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
 
