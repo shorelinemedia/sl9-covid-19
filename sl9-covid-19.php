@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.11
+* Version:              1.0.12
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -33,29 +33,53 @@ if (!function_exists( 'sl9_covid_19_customizer' ) ) {
       'theme_supports' => '', // Rarely needed.
     ) );
 
-    $wp_customize->add_setting( 'sl9_covid_19_test_kit_status', array(
-      'capability' => 'edit_published_posts',
-      'sanitize_callback' => 'sl9_covid19_sanitize_checkbox',
-    ) );
+    // Location sites only
+    if ( !is_main_site() ) {
 
-    $wp_customize->add_control( 'sl9_covid_19_test_kit_status', array(
-      'type' => 'checkbox',
-      'section' => 'sl9_covid_19', // Add a default or your own section
-      'label' => __( 'COVID-19 Test Kits available?' ),
-      'description' => __( 'Your website will have a banner indicating the availability of COVID-19 tests.' ),
-    ) );
+      $wp_customize->add_setting( 'sl9_covid_19_test_kit_status', array(
+        'capability' => 'edit_published_posts',
+        'sanitize_callback' => 'sl9_covid19_sanitize_checkbox',
+      ) );
 
-    // Testing hours
-    $wp_customize->add_setting( 'sl9_covid_19_testing_hours', array(
-      'capability' => 'edit_published_posts'
-    ) );
+      $wp_customize->add_control( 'sl9_covid_19_test_kit_status', array(
+        'type' => 'checkbox',
+        'section' => 'sl9_covid_19', // Add a default or your own section
+        'label' => __( 'COVID-19 Test Kits available?' ),
+        'description' => __( 'Your website will have a banner indicating the availability of COVID-19 tests.' ),
+      ) );
 
-    $wp_customize->add_control( 'sl9_covid_19_testing_hours', array(
-      'type' => 'text',
-      'section' => 'sl9_covid_19', // Add a default or your own section
-      'label' => __( 'Hours offering testing' ),
-      'description' => __( 'Ex: 9AM - 5PM' ),
-    ) );
+      // Testing hours
+      $wp_customize->add_setting( 'sl9_covid_19_testing_hours', array(
+        'capability' => 'edit_published_posts'
+      ) );
+
+      $wp_customize->add_control( 'sl9_covid_19_testing_hours', array(
+        'type' => 'text',
+        'section' => 'sl9_covid_19', // Add a default or your own section
+        'label' => __( 'Hours offering testing' ),
+        'description' => __( 'Ex: 9AM - 5PM' ),
+      ) );
+
+    } // endif is not main site
+
+    if ( is_main_site() ) {
+
+      // Testing schedule
+      $wp_customize->add_setting( 'sl9_covid_19_location_schedule', array(
+        'capability' => 'edit_published_posts',
+        'sanitize_callback' => 'wp_kses_post',
+        'transport'   => 'refresh'
+      ) );
+
+      $wp_customize->add_control( 'sl9_covid_19_location_schedule', array(
+        'type' => 'textarea',
+        'section' => 'sl9_covid_19', // Add a default or your own section
+        'label' => __( 'HTML for the location schedule' ),
+        'description' => __( 'Paste in HTML to that shows the location schedule table' ),
+      ) );
+
+    } // endif is main site
+
   }
   add_action( 'customize_register', 'sl9_covid_19_customizer' );
 }
@@ -168,4 +192,55 @@ if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
   }
   add_action( 'sl9_home_after_location', 'sl9_coronavirus_test_kits_availability', 10, 1 );
 
+}
+
+// Output the location schedule table
+if ( !function_exists( 'sl9_covid_19_location_schedule' ) ) {
+  function sl9_covid_19_location_schedule() {
+    extract(shortcode_atts(array(
+       'text' => '',
+    ), $atts));
+
+    if ( false === ( $location_schedule = get_site_transient( 'sl9_covid_19_location_schedule' ) ) ) {
+
+      // Get the theme mod from the main site
+      if ( !is_main_site() ) {
+        switch_to_blog(1);
+        $location_schedule = get_theme_mod( 'sl9_covid_19_location_schedule', '' );
+        restore_current_blog();
+      } else {
+        $location_schedule = get_theme_mod( 'sl9_covid_19_location_schedule', '' );
+      }
+
+      // Update transient for one hour
+      set_site_transient( 'sl9_covid_19_location_schedule', $location_schedule, 3600 );
+    }
+
+
+    // Build HTML
+    $html = '';
+
+    if ( !empty( $location_schedule ) ) {
+      wp_enqueue_style( 'sl9_covid_19_banner' );
+      $html .= '<div class="sl9-covid-19-location-schedule">';
+      $html .= '<h2>Coronavirus (COVID-19) Testing Locations</h2>';
+      $html .= $location_schedule;
+      $html .= '</div>';
+    }
+
+
+    return do_shortcode( $html );
+
+  }
+  add_shortcode( 'sl9_covid_19_location_schedule', 'sl9_covid_19_location_schedule' );
+}
+
+// Clear transients when Customizer is saved
+if ( !function_exists( 'sl9_covid_19_customizer_save_after' ) ) {
+  function sl9_covid_19_customizer_save_after( $wp_customize ) {
+    // Delete site transients
+    delete_site_transient( 'sl9_covid_19_location_schedule' );
+
+  }
+  add_action( 'customize_save_after', 'sl9_covid_19_customizer_save_after' );
 }
