@@ -88,6 +88,8 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        // Build html
        $html = '';
 
+       $is_main_site = is_main_site();
+
 
        // Enqueue styles
        wp_enqueue_style( 'sl9_covid_19_banner' );
@@ -97,14 +99,15 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        $testing_hours  = get_theme_mod( 'sl9_covid_19_testing_hours', false );
        $testing_time = $testing_hours ? 'today from ' . $testing_hours : 'Today';
        // Set default text based on customizer checkbox
-       $default_text = $kits_available ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check back tomorrow';
+       $default_text = $kits_available ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check our other locations';
        // Use custom text if supplied, or else use default true/false text
-       $text = is_main_site() ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
+       $text = $is_main_site ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
 
        $icon = file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/images/icon-medical-test.svg' );
 
        // Create CSS class to hook styles to
        $html_class = $kits_available ? 'kits-available' : 'kits-unavailable';
+       $html_class .= $is_main_site ? ' covid-19-banner--main-site' : '';
 
        ob_start();
        // Build the HTML markup below and use the $text variable
@@ -113,7 +116,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        <aside role="banner" class="covid-19-banner <?php echo $html_class; ?>">
          <div class="covid-19-banner__icon"><?php echo $icon; ?></div>
          <h2 class="covid-19-banner__title"><?php echo $text; ?></h2>
-         <?php if ( !is_main_site() && $kits_available ) {
+         <?php if ( !$is_main_site && $kits_available ) {
            $button_text = $kits_available ? 'Learn More and Preregister' : 'Learn More';
          ?>
            <a class="btn button" href="/coronavirus-testing/"><?php echo $button_text; ?></a>
@@ -154,7 +157,7 @@ if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
     $kits_available = get_field( 'coronavirus_test_kits_available', $post_id );
     $location_url = trailingslashit(get_field( 'visit_location', $post_id )['url']);
     $html_class = $kits_available ? 'kits-available' : 'kits-unavailable';
-    $text = $kits_available ? 'Coronavirus Testing <strong>Available!</strong><br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check back tomorrow';
+    $text = $kits_available ? 'Coronavirus Testing <strong>Available!</strong><br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check our other locations';
     ?>
 
     <div class="location-kit-availability <?php echo $html_class; ?>">
