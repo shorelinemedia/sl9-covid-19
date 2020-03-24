@@ -140,7 +140,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        <aside role="banner" class="covid-19-banner <?php echo $html_class; ?>">
          <div class="covid-19-banner__icon"><?php echo $icon; ?></div>
          <h2 class="covid-19-banner__title"><?php echo $text; ?></h2>
-         <?php if ( !$is_main_site && $kits_available ) {
+         <?php if ( !$is_main_site ) {
            $button_text = $kits_available ? 'Learn More and Preregister' : 'Learn More';
          ?>
            <a class="btn button" href="/coronavirus-testing/"><?php echo $button_text; ?></a>
@@ -181,7 +181,7 @@ if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
     $kits_available = get_field( 'coronavirus_test_kits_available', $post_id );
     $location_url = trailingslashit(get_field( 'visit_location', $post_id )['url']);
     $html_class = $kits_available ? 'kits-available' : 'kits-unavailable';
-    $text = $kits_available ? 'Coronavirus Testing <strong>Available!</strong><br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check our other locations';
+    $text = $kits_available ? 'Coronavirus Testing <strong>Available!</strong><br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check our other locations<br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Learn more</a>';
     ?>
 
     <div class="location-kit-availability <?php echo $html_class; ?>">
