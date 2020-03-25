@@ -19,6 +19,7 @@ if ( is_main_site() ) {
   include( SL9_COVID_19_PATH . 'inc/custom-fields.php' );
 }
 
+
 // Customizer scoped to 'editor' user role to set true/false about test kit availability
 if (!function_exists( 'sl9_covid_19_customizer' ) ) {
   function sl9_covid_19_customizer( $wp_customize ) {
@@ -36,29 +37,25 @@ if (!function_exists( 'sl9_covid_19_customizer' ) ) {
     // Location sites only
     if ( !is_main_site() ) {
 
-      $wp_customize->add_setting( 'sl9_covid_19_test_kit_status', array(
-        'capability' => 'edit_published_posts',
-        'sanitize_callback' => 'sl9_covid19_sanitize_checkbox',
-      ) );
+      $location = sl9_covid_19_get_location();
 
-      $wp_customize->add_control( 'sl9_covid_19_test_kit_status', array(
-        'type' => 'checkbox',
-        'section' => 'sl9_covid_19', // Add a default or your own section
-        'label' => __( 'COVID-19 Test Kits available?' ),
-        'description' => __( 'Your website will have a banner indicating the availability of COVID-19 tests.' ),
-      ) );
+      if ( $location ) {
+        $location_edit_url = network_site_url( 'wp-admin/post.php?post=' . $location['ID'] . '&action=edit' );
+        $wp_customize->add_setting('sl9_covid_19_disabled_message', array(
+          'capability' => 'edit_published_posts',
+          'transport'   => 'refresh'
+        ));
 
-      // Testing hours
-      $wp_customize->add_setting( 'sl9_covid_19_testing_hours', array(
-        'capability' => 'edit_published_posts'
-      ) );
+        $wp_customize->add_control( new WP_Customize_Message_Control (
+          $wp_customize,
+          'sl9_covid_19_disabled_message',
+          array(
+            'section' => 'sl9_covid_19', // Add a default or your own section
+            'label' => __( 'Updating testing availability has moved' ),
+            'description' => __( '<p><a class="button button-secondary" href="' . $location_edit_url . '">Please edit the ' . $location['post_title']  . ' location.</a></p>' ),
+          )));
 
-      $wp_customize->add_control( 'sl9_covid_19_testing_hours', array(
-        'type' => 'text',
-        'section' => 'sl9_covid_19', // Add a default or your own section
-        'label' => __( 'Hours offering testing' ),
-        'description' => __( 'Ex: 9AM - 5PM' ),
-      ) );
+      }
 
     } // endif is not main site
 
@@ -175,7 +172,7 @@ if ( !function_exists( 'sl9_covid_19_get_location' ) ) {
     if ( is_numeric( $location ) ) {
       // It's a post ID so try to match to the array key for 'ID'
       foreach ( $locations as $name => $val ) {
-        if ( $location == $val['ID'] ) return $location[$name];
+        if ( $location == $val['ID'] ) return $locations[$name];
       }
     // If $location is not empty and it's not an integer than it's a string
     } elseif ( !empty( $location ) ){
@@ -232,20 +229,24 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        ), $atts));
 
        // Build html
-       $html = '';
+       $html = $testing_hours = $kits_available = '';
 
        $is_main_site = is_main_site();
 
 
        // Enqueue styles
        wp_enqueue_style( 'sl9_covid_19_banner' );
-       // Get Customizer/theme mod setting for kit status
-       $kits_available = get_theme_mod( 'sl9_covid_19_test_kit_status' );
-       // Testing Hours
-       $testing_hours  = get_theme_mod( 'sl9_covid_19_testing_hours', false );
-       $testing_time = $testing_hours ? 'today from ' . $testing_hours : 'Today';
+       // Get the location
+       $location = sl9_covid_19_get_location();
+
+       if ( !empty( $location ) ) {
+         $kits_available = $location['coronavirus_test_kits_available'];
+         $testing_hours = $location['coronavirus_testing_hours_today'];
+       } else { return false; }
+
+       $testing_time = !empty( $testing_hours ) ? 'today from ' . $testing_hours : 'Today';
        // Set default text based on customizer checkbox
-       $default_text = $kits_available ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check our other locations';
+       $default_text = !empty( $kits_available ) ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check our other locations';
        // Use custom text if supplied, or else use default true/false text
        $text = $is_main_site ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
 
@@ -279,6 +280,9 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
 // Init actions
 if ( !function_exists( 'sl9_covid_19_init' ) ) {
   function sl9_covid_19_init() {
+    // Custom message customizer control
+    include_once( SL9_COVID_19_PATH . 'inc/class-wp-customize-message-control.php' );
+
     // Hook the shortcode output directly into the template depending on the hooks avaialable
     if ( has_action( 'wp_body_open' ) ) {
       add_action( 'wp_body_open', 'sl9_covid_19_add_banner_to_body' );
@@ -300,10 +304,11 @@ if ( !function_exists( 'sl9_covid_19_add_banner_to_body' ) ) {
 if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
   function sl9_coronavirus_test_kits_availability( $post_id = false ) {
     if ( !$post_id ) return;
-    $kits_available = get_field( 'coronavirus_test_kits_available', $post_id );
-    $location_url = trailingslashit(get_field( 'visit_location', $post_id )['url']);
-    $html_class = $kits_available ? 'kits-available' : 'kits-unavailable';
-    $text = $kits_available ? 'Coronavirus Testing <strong>Available!</strong><br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check our other locations<br/><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Learn more</a>';
+    $location = sl9_covid_19_get_location( $post_id );
+    $kits_available = $location['coronavirus_test_kits_available'];
+    $location_url = trailingslashit($location['visit_location']['url']);
+    $html_class = !empty( $kits_available ) ? 'kits-available' : 'kits-unavailable';
+    $text = !empty( $kits_available ) ? 'Coronavirus Testing <strong>Available!</strong><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check our other locations<a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Learn more</a>';
     ?>
 
     <div class="location-kit-availability <?php echo $html_class; ?>">

@@ -108,6 +108,7 @@
 }
 
 .location-kit-availability .btn {
+  margin-top: 1em;
   background-color: white;
   border-color: white;
   color: red;
