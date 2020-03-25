@@ -84,6 +84,128 @@ if (!function_exists( 'sl9_covid_19_customizer' ) ) {
   add_action( 'customize_register', 'sl9_covid_19_customizer' );
 }
 
+// Get ACF custom fields individually since get_fields() breaks in multisite
+if ( !function_exists( 'sl9_covid_19_get_custom_fields' ) ) {
+  function sl9_covid_19_get_custom_fields( $post_id = '' ) {
+    if ( !$post_id ) $post_id = $this->get_location_id();
+    if ( !function_exists( 'get_fields' ) ) return false;
+
+    $default_field_names = array(
+      'coronavirus_test_kits_available',
+      'coronavirus_testing_hours_today',
+      'visit_location',
+      'hours_of_operation',
+      'phone_number',
+      'address_line_1',
+      'address_line_2',
+      'pay_bill'
+    );
+    // Let themes override which acf fields to get
+    $field_names = apply_filters( 'sl9_covid_19_acf_location_fields', array() );
+    $field_names = array_merge( $default_field_names, $field_names );
+    $fields = array();
+
+    foreach ( $field_names as $field ) {
+      $fields[$field] = get_field( $field, $post_id );
+    }
+
+    return $fields;
+  }
+}
+
+// Get locations from main sites' locations post type
+if ( !function_exists( 'sl9_covid_19_get_locations' ) ) {
+  function sl9_covid_19_get_locations() {
+    global $blog_id;
+
+    if ( false === ( $locations = get_site_transient( 'sl9_covid_19_locations' ) ) ) {
+
+      $query_args = array(
+        'post_type' => 'locations',
+        'posts_per_page' => -1,
+        'post_status' => 'publish'
+      );
+
+      // Switch to main site to get locations
+      switch_to_blog(1);
+
+      $locations = new WP_Query( $query_args );
+      $locations = $locations->posts;
+
+      if ( empty( $locations ) ) return false;
+
+      $locations_new = array();
+      // Loop through each location and update the post object with the post meta
+      foreach ( $locations as $loc ) {
+
+        // Get post meta
+        $post_meta = sl9_covid_19_get_custom_fields( $loc->ID );
+        $new_key = $loc->post_name;
+        // Convert post object to array
+        $locations_new[$new_key] = (array) $loc;
+        // Add post meta to array
+        if ( !empty( $post_meta ) ) {
+          $locations_new[$new_key] = array_merge( $locations_new[$new_key], $post_meta );
+        }
+
+      }
+      $locations = $locations_new;
+
+      restore_current_blog();
+
+
+      // Update transient for one hour
+      set_site_transient( 'sl9_covid_19_locations', $locations, 3600 );
+
+
+    }
+
+
+    return $locations;
+  }
+}
+
+// Pluck a location by slug or id from our locations array
+if ( !function_exists( 'sl9_covid_19_get_location' ) ) {
+  function sl9_covid_19_get_location( $location = '' ) {
+    // Get all locations
+    $locations = sl9_covid_19_get_locations();
+
+    // Check if its a string or an integer
+    if ( is_numeric( $location ) ) {
+      // It's a post ID so try to match to the array key for 'ID'
+      foreach ( $locations as $name => $val ) {
+        if ( $location == $val['ID'] ) return $location[$name];
+      }
+    // If $location is not empty and it's not an integer than it's a string
+    } elseif ( !empty( $location ) ){
+      // Its a slug so just return the $key
+      return $locations[$location];
+    }
+
+    // If we have no $location var and it's not the main site, try to match to the
+    // site/blog URL
+    if ( empty( $location ) && !is_main_site() ) {
+
+      // Get site url
+      $site_url = get_site_url();
+
+      // Visit location custom field
+      foreach ( $locations as $loc => $val ) {
+        $array_search = preg_grep( "/" . preg_quote($site_url, '/') . "/i", $val['visit_location'] );
+
+        if ( !empty( $array_search ) ) {
+          return $locations[$loc];
+        }
+
+      }
+
+
+    }
+    return false;
+  }
+}
+
 // Sanitize our checkbox in customizer
 if (!function_exists( 'sl9_covid19_sanitize_checkbox' ) ) {
   function sl9_covid19_sanitize_checkbox( $checked ) {
@@ -235,12 +357,29 @@ if ( !function_exists( 'sl9_covid_19_location_schedule' ) ) {
   add_shortcode( 'sl9_covid_19_location_schedule', 'sl9_covid_19_location_schedule' );
 }
 
+
+// Delete site transients
+if ( !function_exists( 'sl9_covid_19_delete_site_transients' ) ) {
+  function sl9_covid_19_delete_site_transients() {
+    delete_site_transient( 'sl9_covid_19_locations' );
+    delete_site_transient( 'sl9_covid_19_location_schedule' );
+  }
+}
+
 // Clear transients when Customizer is saved
 if ( !function_exists( 'sl9_covid_19_customizer_save_after' ) ) {
   function sl9_covid_19_customizer_save_after( $wp_customize ) {
     // Delete site transients
-    delete_site_transient( 'sl9_covid_19_location_schedule' );
-
+    sl9_covid_19_delete_site_transients();
   }
   add_action( 'customize_save_after', 'sl9_covid_19_customizer_save_after' );
+}
+
+// Clear transients when location post types are saved
+if ( !function_exists( 'sl9_covid_19_save_post_locations' ) ) {
+  function sl9_covid_19_save_post_locations( $post_ID, $post, $update ) {
+    // Delete site transients
+    if ( is_main_site() ) { sl9_covid_19_delete_site_transients(); }
+  }
+  add_action( 'save_post_locations', 'sl9_covid_19_save_post_locations', 0, 3 );
 }
