@@ -242,6 +242,8 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        if ( !empty( $location ) ) {
          $kits_available = $location['coronavirus_test_kits_available'];
          $testing_hours = $location['coronavirus_testing_hours_today'];
+       } elseif ( $is_main_site ) {
+         $kits_available = true;
        } else { return false; }
 
        $testing_time = !empty( $testing_hours ) ? 'today from ' . $testing_hours : 'Today';
