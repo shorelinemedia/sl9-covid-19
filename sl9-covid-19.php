@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.16
+* Version:              1.0.17
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -90,6 +90,7 @@ if ( !function_exists( 'sl9_covid_19_get_custom_fields' ) ) {
     $default_field_names = array(
       'coronavirus_test_kits_available',
       'coronavirus_testing_hours_today',
+      'coronavirus_weekly_testing_hours_text',
       'visit_location',
       'hours_of_operation',
       'phone_number',
@@ -217,6 +218,10 @@ if (!function_exists( 'sl9_covid19_sanitize_checkbox' ) ) {
 if ( !function_exists( 'sl9_covid_19_banner_assets' ) ) {
   function sl9_covid_19_banner_assets() {
     wp_register_style( 'sl9_covid_19_banner', plugins_url( 'assets/css/covid-banner.css', __FILE__ ) );
+    if ( is_main_site() ) {
+      wp_enqueue_script( 'popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js', array( 'jquery' ), null, false );
+      wp_enqueue_script( 'sl9-covid-19', plugins_url( 'assets/js/app.js', __FILE__ ), array( 'popper' ), null, false );
+    }
   }
   add_action( 'wp_enqueue_scripts', 'sl9_covid_19_banner_assets' );
 }
@@ -306,15 +311,40 @@ if ( !function_exists( 'sl9_covid_19_add_banner_to_body' ) ) {
 if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
   function sl9_coronavirus_test_kits_availability( $post_id = false ) {
     if ( !$post_id ) return;
+    // wp_enqueue_script( 'popper' );
+
     $location = sl9_covid_19_get_location( $post_id );
     $kits_available = $location['coronavirus_test_kits_available'];
     $location_url = trailingslashit($location['visit_location']['url']);
     $html_class = !empty( $kits_available ) ? 'kits-available' : 'kits-unavailable';
-    $text = !empty( $kits_available ) ? 'Coronavirus Testing <strong>Available!</strong><a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Preregister Now</a>' : 'Coronavirus Testing <strong>is not available</strong> at this time, please check our other locations<a href="' . $location_url . 'coronavirus-testing/" class="btn button btn-primary">Learn more</a>';
+    $weekly_testing_text = !empty( $location['coronavirus_weekly_testing_hours_text'] ) ? $location['coronavirus_weekly_testing_hours_text'] : '';
+    $text = !empty( $kits_available ) ? 'Coronavirus Testing <strong>Available!</strong>' : 'Coronavirus Testing <strong>is not available</strong> today, please check our other locations';
+    $location_button_text = !empty( $kits_available ) ? 'Preregister Now' : 'Learn More';
+
+    // Build buttons
+    $buttons = '<div class="btn-toolbar" role="toolbar" aria-label="Coronavirus Info">';
+    $buttons .= '<div class="btn-group btn-group-lg" role="group" aria-label="Important Links">
+    <a href="' . $location_url . 'coronavirus-testing/" class="btn btn-primary ' . ( !empty( $weekly_testing_text ) ? ' ' : '' )  . '">' . $location_button_text . '</a>';
+
+    // Hours
+    if ( !empty( $weekly_testing_text ) ) {
+      $icon_clock = file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/images/icon-clock.svg' );
+      $buttons .= '<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      ' . $icon_clock . ' Testing Hours
+      </button>
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+      <h5 class="dropdown-menu__title">This Week:</h5>
+      ' . $weekly_testing_text . '
+      </div>';
+
+    }
+    $buttons .= '</div><!-- .btn-group -->';
+    $buttons .= '</div><!-- .btn-toolbar -->';
     ?>
 
     <div class="location-kit-availability <?php echo $html_class; ?>">
       <?php echo $text; ?>
+      <?php echo $buttons; ?>
     </div>
     <?php
 
@@ -389,4 +419,16 @@ if ( !function_exists( 'sl9_covid_19_save_post_locations' ) ) {
     if ( is_main_site() ) { sl9_covid_19_delete_site_transients(); }
   }
   add_action( 'save_post_locations', 'sl9_covid_19_save_post_locations', 0, 3 );
+}
+
+
+// Add 'integrity' and 'crossorigin' to popper.js and other remote scripts
+if ( !function_exists( 'sl9_covid_19_remote_scripts_enqueue' ) ) {
+  function sl9_covid_19_remote_scripts_enqueue( $html, $handle = '' ) {
+    if ( false !== array_search( $handle, array( 'popper', 'popper.js') ) ) {
+      return str_replace( "media='all'", "media='all' integrity='sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49' crossorigin='anonymous'", $html );
+    }
+    return $html;
+  }
+  add_filter( 'style_loader_tag', 'sl9_covid_19_remote_scripts_enqueue', 10, 2 );
 }

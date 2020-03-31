@@ -43,7 +43,26 @@ acf_add_local_field_group(array(
 			'prepend' => '',
 			'append' => '',
 			'maxlength' => '',
-		)
+		),
+		array(
+			'key' => 'field_5e824174dbb8c',
+			'label' => 'Weekly Testing Hours Text',
+			'name' => 'coronavirus_weekly_testing_hours_text',
+			'type' => 'text',
+			'instructions' => 'Add text about testing hours for the week in a readable text. Ex: "Mon - Thurs from 9AM - 9PM"',
+			'required' => 0,
+			'conditional_logic' => 0,
+			'wrapper' => array(
+				'width' => '',
+				'class' => '',
+				'id' => '',
+			),
+			'default_value' => '',
+			'placeholder' => '',
+			'prepend' => '',
+			'append' => '',
+			'maxlength' => '',
+		),		
 	),
 	'location' => array(
 		array(
