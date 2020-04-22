@@ -253,7 +253,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
 
        $testing_time = !empty( $testing_hours ) ? 'today from ' . $testing_hours : 'Today';
        // Set default text based on customizer checkbox
-       $default_text = !empty( $kits_available ) ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Coronavirus Testing is <strong>not available</strong> at this time, please check our other locations';
+       $default_text = !empty( $kits_available ) ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Check our locations for Coronavirus testing availability';
        // Use custom text if supplied, or else use default true/false text
        $text = $is_main_site ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
 
