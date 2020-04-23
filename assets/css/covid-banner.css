@@ -20,6 +20,14 @@
     align-items: center;
 }
 
+.covid-19-banner.kits-unavailable {
+  background-color: red;
+}
+
+.covid-19-banner--main-site.kits-unavailable {
+  background-color: green;
+}
+
 .covid-19-banner__title {
   font-weight: normal;
   margin: 0;
@@ -43,7 +51,7 @@
 .covid-19-banner .btn,
 .covid-19-banner .button {
   margin-left: 1.5em;
-  color: green;
+  color: red;
   border-color: white;
   background-color: white;
   text-transform: uppercase;
@@ -52,6 +60,10 @@
   white-space: initial;
 }
 
+.covid-19-banner.kits-available .btn,
+.covid-19-banner.kits-available .button {
+  color: green;
+}
 
 @media screen and (min-width: 769px) {
   .covid-19-banner__title { font-size: 150%; }
