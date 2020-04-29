@@ -188,6 +188,15 @@
   .sl9-covid-19-location-schedule tr.table-header { border-bottom: 1px solid; }
   .sl9-covid-19-location-schedule tr.table-footer { border-top: 1px solid; }
 
+  .sl9-covid-19-location-schedule td.table-cell__highlighted,
+  .sl9-covid-19-location-schedule th.table-cell__highlighted {
+    background-color: rgba(0,128,0,0.15);
+  }
+  .sl9-covid-19-location-schedule tr:nth-child(odd) td.table-cell__highlighted,
+  .sl9-covid-19-location-schedule tr:nth-child(odd) th.table-cell__highlighted {
+    background-color: rgba(0,128,0,0.3);
+  }
+
 @media screen and (min-width: 992px) {
   .sl9-covid-19-location-schedule__wrap {
     max-width: none;

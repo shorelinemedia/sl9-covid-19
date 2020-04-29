@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.2
+* Version:              1.0.3
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -221,12 +221,31 @@ if (!function_exists( 'sl9_covid19_sanitize_checkbox' ) ) {
 if ( !function_exists( 'sl9_covid_19_banner_assets' ) ) {
   function sl9_covid_19_banner_assets() {
     wp_register_style( 'sl9_covid_19_banner', plugins_url( 'assets/css/covid-banner.css', __FILE__ ) );
+    wp_register_script( 'popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js', array( 'jquery' ), null, false );
+    wp_register_script( 'sl9-covid-19', plugins_url( 'assets/js/app.js', __FILE__ ), array( 'popper' ), null, false );
     if ( is_main_site() ) {
-      wp_enqueue_script( 'popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js', array( 'jquery' ), null, false );
-      wp_enqueue_script( 'sl9-covid-19', plugins_url( 'assets/js/app.js', __FILE__ ), array( 'popper' ), null, false );
+      wp_enqueue_script( 'popper' );
+      wp_enqueue_script( 'sl9-covid-19' );
     }
   }
   add_action( 'wp_enqueue_scripts', 'sl9_covid_19_banner_assets' );
+}
+
+// Add JS variables for our script
+if ( !function_exists( 'sl9_covid_19_script_vars' ) ) {
+  function sl9_covid_19_script_vars() {
+    // Script vars array
+    $vars = array();
+
+    $location = sl9_covid_19_get_location();
+    if ( !empty( $location ) ) {
+      $vars['location'] = $location['post_name'];
+    }
+
+    wp_localize_script( 'sl9-covid-19', 'sl9_covid_19', $vars );
+
+  }
+  add_action( 'wp_enqueue_scripts', 'sl9_covid_19_script_vars', 20 );
 }
 
 // Shortcode to output the banner
@@ -314,7 +333,6 @@ if ( !function_exists( 'sl9_covid_19_add_banner_to_body' ) ) {
 if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
   function sl9_coronavirus_test_kits_availability( $post_id = false ) {
     if ( !$post_id ) return;
-    // wp_enqueue_script( 'popper' );
 
     $location = sl9_covid_19_get_location( $post_id );
     $kits_available = $location['coronavirus_test_kits_available'];
@@ -384,6 +402,9 @@ if ( !function_exists( 'sl9_covid_19_location_schedule' ) ) {
 
     if ( !empty( $location_schedule ) ) {
       wp_enqueue_style( 'sl9_covid_19_banner' );
+      // Enqueue JS for highlighting location columns
+      wp_enqueue_script( 'popper' );
+      wp_enqueue_script( 'sl9-covid-19' );
       $html .= '<div class="sl9-covid-19-location-schedule__wrap">';
       $html .= '<div class="sl9-covid-19-location-schedule">';
       $html .= '<h2>Coronavirus (COVID-19) Testing Locations</h2>';
