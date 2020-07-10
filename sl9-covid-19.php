@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.4
+* Version:              1.0.5
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -91,6 +91,7 @@ if ( !function_exists( 'sl9_covid_19_get_custom_fields' ) ) {
       'coronavirus_test_kits_available',
       'coronavirus_testing_hours_today',
       'coronavirus_weekly_testing_hours_text',
+      'coronavirus_preregistration_required',
       'visit_location',
       'hours_of_operation',
       'phone_number',
@@ -256,7 +257,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        ), $atts));
 
        // Build html
-       $html = $testing_hours = $kits_available = '';
+       $html = $testing_hours = $kits_available = $prereg_reqd = '';
 
        $is_main_site = is_main_site();
 
@@ -269,6 +270,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        if ( !empty( $location ) ) {
          $kits_available = $location['coronavirus_test_kits_available'];
          $testing_hours = $location['coronavirus_testing_hours_today'];
+         $prereg_reqd = $location['coronavirus_preregistration_required'];
        } elseif ( $is_main_site ) {
          $kits_available = true;
        } else { return false; }
@@ -293,7 +295,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
          <div class="covid-19-banner__icon"><?php echo $icon; ?></div>
          <h2 class="covid-19-banner__title"><?php echo $text; ?></h2>
          <?php if ( !$is_main_site ) {
-           $button_text = $kits_available ? 'Learn More and Preregister' : 'Learn More';
+           $button_text = $kits_available ? ( !empty( $prereg_reqd ) ? 'Pre-Registration <span style="color:red">Required</span>' : 'Learn More and Preregister' ) : 'Learn More';
          ?>
            <a class="btn button" href="/coronavirus-testing/"><?php echo $button_text; ?></a>
          <?php } // endif is main site ?>
@@ -336,11 +338,12 @@ if ( !function_exists( 'sl9_coronavirus_test_kits_availability' ) ) {
 
     $location = sl9_covid_19_get_location( $post_id );
     $kits_available = $location['coronavirus_test_kits_available'];
+    $prereg_reqd = $location['coronavirus_preregistration_required'];
     $location_url = trailingslashit($location['visit_location']['url']);
     $html_class = !empty( $kits_available ) ? 'kits-available' : 'kits-unavailable';
     $weekly_testing_text = !empty( $location['coronavirus_weekly_testing_hours_text'] ) ? $location['coronavirus_weekly_testing_hours_text'] : '';
     $text = !empty( $kits_available ) ? 'Coronavirus Testing <strong>Available!</strong>' : 'Coronavirus Testing <strong>is not available</strong> today, please check our other locations';
-    $location_button_text = !empty( $kits_available ) ? 'Preregister Now' : 'Learn More';
+    $location_button_text = !empty( $kits_available ) ? ( $prereg_reqd ? 'Pre-Registration <span style="color:red;">Required</span>' : 'Preregister Now' ) : 'Learn More';
 
     // Build buttons
     $buttons = '<div class="btn-toolbar" role="toolbar" aria-label="Coronavirus Info">';
