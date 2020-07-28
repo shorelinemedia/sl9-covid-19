@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.5
+* Version:              1.0.6
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -13,6 +13,9 @@
 */
 
 define( 'SL9_COVID_19_PATH', plugin_dir_path( __FILE__ ) );
+
+// Register deactivation hook
+register_deactivation_hook( __FILE__, 'sl9_covid_19_deactivation' );
 
 // ACF Fields for the main site
 if ( is_main_site() ) {
@@ -90,6 +93,7 @@ if ( !function_exists( 'sl9_covid_19_get_custom_fields' ) ) {
     $default_field_names = array(
       'coronavirus_test_kits_available',
       'coronavirus_testing_hours_today',
+      'coronavirus_current_weekly_hours',
       'coronavirus_weekly_testing_hours_text',
       'coronavirus_preregistration_required',
       'visit_location',
@@ -269,7 +273,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
 
        if ( !empty( $location ) ) {
          $kits_available = $location['coronavirus_test_kits_available'];
-         $testing_hours = $location['coronavirus_testing_hours_today'];
+         $testing_hours = !empty( $location['coronavirus_testing_hours_today'] ) ? $location['coronavirus_testing_hours_today'] : sl9_covid_19_location_get_todays_hours();
          $prereg_reqd = $location['coronavirus_preregistration_required'];
        } elseif ( $is_main_site ) {
          $kits_available = true;
@@ -311,6 +315,10 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
 // Init actions
 if ( !function_exists( 'sl9_covid_19_init' ) ) {
   function sl9_covid_19_init() {
+
+    // Hook our schedule event to a function
+    add_action( 'sl9_covid_19_event_delete_transients', 'sl9_covid_19_nightly_transient_clear' );
+
     // Custom message customizer control
     include_once( SL9_COVID_19_PATH . 'inc/class-wp-customize-message-control.php' );
 
@@ -460,4 +468,141 @@ if ( !function_exists( 'sl9_covid_19_remote_scripts_enqueue' ) ) {
     return $html;
   }
   add_filter( 'style_loader_tag', 'sl9_covid_19_remote_scripts_enqueue', 10, 2 );
+}
+
+// Get today's hourly testing schedule for a location
+if ( !function_exists( 'sl9_covid_19_location_get_todays_hours' ) ) {
+  function sl9_covid_19_location_get_todays_hours() {
+    $todays_hours = false;
+    $location = sl9_covid_19_get_location();
+    if ( !$location ) return false;
+
+
+    // Current timestamp using site's timezone settings
+    $current_time = current_time( 'timestamp' );
+    $weekday = strtolower( date( 'D', $current_time ) ); // mon, sun, etc
+
+    // Get the hourly testing times
+    $times = $location['coronavirus_current_weekly_hours'];
+    if ( empty( $times ) ) return false;
+
+    // Loop through each day/block and try to grab the daily hours or grab value for 'all'
+    foreach ( $times as $time ) {
+      if ( ( false !== strpos( $time['weekday'], $weekday ) ) || (  $time['weekday'] == 'all' ) ) {
+        $hours = $time['hours'][0];
+        if ( !empty( $hours ) ) {
+          $todays_hours = $hours['start'] . ' - ' . $hours['end'];
+        }
+
+      }
+
+    }
+
+    return $todays_hours;
+  }
+}
+
+// Shortcode to output today's hours
+if ( !function_exists( 'sl9_covid_19_location_todays_hours_shortcode' ) ) {
+  function sl9_covid_19_location_todays_hours_shortcode( $atts = array(), $content = null ) {
+    $location = sl9_covid_19_get_location();
+    if ( !$location ) return false;
+
+    $kits_available = $location['coronavirus_test_kits_available'];
+
+    $todays_hours = sl9_covid_19_location_get_todays_hours();
+    if ( !$kits_available || empty( $todays_hours ) ) return "No testing today.";
+
+    return $todays_hours;
+
+  }
+  add_shortcode( 'covid_19_todays_hours', 'sl9_covid_19_location_todays_hours_shortcode' );
+}
+
+// Delete site transients via scheduled events
+if ( !function_exists( 'sl9_covid_19_nightly_transient_clear' ) ) {
+  function sl9_covid_19_nightly_transient_clear() {
+    sl9_covid_19_delete_site_transients();
+    sl9_covid_19_flush_cache();
+  }
+}
+
+if ( !function_exists( 'sl9_covid_19_flush_cache' ) ) {
+  function sl9_covid_19_flush_cache() {
+    // Flush WP cache
+    if ( function_exists( 'wp_cache_flush' ) ) {
+      wp_cache_flush();
+    }
+    // Flush WP-Rocket cache
+    if ( function_exists( 'rocket_clean_domain' ) ) {
+      rocket_clean_domain();
+    }
+  }
+}
+
+// Do stuff on plugin activation
+if ( !function_exists( 'sl9_covid_19_activation' ) ) {
+  function sl9_covid_19_activation() {
+    // Setup cron job
+    if ( !wp_next_scheduled ( 'sl9_covid_19_event_delete_transients' ) ) {
+        wp_schedule_event( sl9_wpstrtotime('00:00:00'), 'daily', 'sl9_covid_19_event_delete_transients' );
+    }
+    // Flush cache
+    sl9_covid_19_flush_cache();
+  }
+  add_action( 'init', 'sl9_covid_19_activation' );
+}
+
+if ( !function_exists( 'sl9_covid_19_deactivation' ) ) {
+  function sl9_covid_19_deactivation() {
+    global $blog_id;
+    if ( empty( $blog_id ) ) return false;
+    // Clear scheduled hook on every site
+    $blogs = get_sites();
+
+    foreach ( $blogs as $key => $val ) {
+      switch_to_blog( $val->blog_id );
+
+      wp_clear_scheduled_hook( 'sl9_covid_19_event_delete_transients' );
+      // Flush cache
+      sl9_covid_19_flush_cache();
+
+      restore_current_blog( $blog_id );
+    }
+  }
+  // Register deactivation hook
+  register_deactivation_hook( __FILE__, 'sl9_covid_19_deactivation' );
+
+}
+
+// Get a string to time based on site's timezone settings
+if ( !function_exists( 'sl9_wpstrtotime' ) ) {
+  function sl9_wpstrtotime($str, $format = 'U') {
+    // This function behaves a bit like PHP's StrToTime() function, but taking into account the Wordpress site's timezone
+    // CAUTION: It will throw an exception when it receives invalid input - please catch it accordingly
+    // From https://mediarealm.com.au/
+
+    $tz_string = get_option('timezone_string');
+    $tz_offset = get_option('gmt_offset', 0);
+
+    if (!empty($tz_string)) {
+        // If site timezone option string exists, use it
+        $timezone = $tz_string;
+
+    } elseif ($tz_offset == 0) {
+        // get UTC offset, if it isn’t set then return UTC
+        $timezone = 'UTC';
+
+    } else {
+        $timezone = $tz_offset;
+
+        if(substr($tz_offset, 0, 1) != "-" && substr($tz_offset, 0, 1) != "+" && substr($tz_offset, 0, 1) != $format) {
+            $timezone = "+" . $tz_offset;
+        }
+    }
+
+    $datetime = new DateTime($str, new DateTimeZone($timezone));
+    return $datetime->format($format);
+  }
+
 }
