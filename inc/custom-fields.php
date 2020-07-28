@@ -30,7 +30,7 @@ acf_add_local_field_group(array(
 			'label' => 'Coronavirus Current Testing Hours',
 			'name' => 'coronavirus_testing_hours_today',
 			'type' => 'text',
-			'instructions' => '',
+			'instructions' => 'To use more granular weekly testing schedule, leave hours blank and fields will appear.  Note: Leave hours blank for banner to say "Available today!". Be sure to remove any weekly schedule hours from below as well.',
 			'required' => 0,
 			'conditional_logic' => 0,
 			'wrapper' => array(
@@ -50,7 +50,7 @@ acf_add_local_field_group(array(
 			'label' => 'Coronavirus Current Weekly Hours',
 			'name' => 'coronavirus_current_weekly_hours',
 			'type' => 'repeater',
-			'instructions' => '',
+			'instructions' => 'Add weekly testing hours. If there is one set time, choose "Everyday" and only add one set of times. If there is no testing on a day, do not add that day to schedule.',
 			'required' => 0,
 			'conditional_logic' => array(
 				array(
