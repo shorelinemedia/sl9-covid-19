@@ -86,13 +86,13 @@ acf_add_local_field_group(array(
 					),
 					'choices' => array(
 						'all' => 'Everyday',
-						'sun' => 'Sunday',
 						'mon' => 'Monday',
 						'tues' => 'Tuesday',
 						'wed' => 'Wednesday',
 						'thurs' => 'Thursday',
 						'fri' => 'Friday',
 						'sat' => 'Saturday',
+						'sun' => 'Sunday',
 					),
 					'default_value' => array(
 					),
