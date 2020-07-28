@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.6
+* Version:              1.0.7
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -270,6 +270,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        wp_enqueue_style( 'sl9_covid_19_banner' );
        // Get the location
        $location = sl9_covid_19_get_location();
+       $testing_hours = false;
 
        if ( !empty( $location ) ) {
          $kits_available = $location['coronavirus_test_kits_available'];
@@ -281,7 +282,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
 
        $testing_time = !empty( $testing_hours ) ? 'today from ' . $testing_hours : 'Today';
        // Set default text based on customizer checkbox
-       $default_text = !empty( $kits_available ) ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Check our locations for Coronavirus testing availability';
+       $default_text = !empty( $kits_available ) && !empty( $testing_hours ) ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Check our locations for Coronavirus testing availability';
        // Use custom text if supplied, or else use default true/false text
        $text = $is_main_site ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
 
@@ -473,7 +474,7 @@ if ( !function_exists( 'sl9_covid_19_remote_scripts_enqueue' ) ) {
 // Get today's hourly testing schedule for a location
 if ( !function_exists( 'sl9_covid_19_location_get_todays_hours' ) ) {
   function sl9_covid_19_location_get_todays_hours() {
-    $todays_hours = false;
+    $todays_hours = '';
     $location = sl9_covid_19_get_location();
     if ( !$location ) return false;
 
