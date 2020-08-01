@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.8
+* Version:              1.0.10
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -121,7 +121,7 @@ if ( !function_exists( 'sl9_covid_19_get_locations' ) ) {
   function sl9_covid_19_get_locations() {
     global $blog_id;
 
-    if ( false === ( $locations = get_site_transient( 'sl9_covid_19_locations' ) ) ) {
+    if ( false === ( $locations = get_site_option( 'sl9_covid_19_locations' ) ) ) {
 
       $query_args = array(
         'post_type' => 'locations',
@@ -142,7 +142,7 @@ if ( !function_exists( 'sl9_covid_19_get_locations' ) ) {
       foreach ( $locations as $loc ) {
 
         // Get post meta
-        $post_meta = sl9_covid_19_get_custom_fields( $loc->ID );
+        $post_meta = get_fields( $loc->ID );
         $new_key = $loc->post_name;
         // Convert post object to array
         $locations_new[$new_key] = (array) $loc;
@@ -153,13 +153,12 @@ if ( !function_exists( 'sl9_covid_19_get_locations' ) ) {
 
       }
       $locations = $locations_new;
-
-      restore_current_blog();
-
+      wp_reset_postdata();
 
       // Update transient for one hour
-      set_site_transient( 'sl9_covid_19_locations', $locations, 3600 );
+      update_site_option( 'sl9_covid_19_locations', $locations );
 
+      restore_current_blog();
 
     }
 
@@ -440,7 +439,7 @@ if ( !function_exists( 'sl9_covid_19_location_schedule' ) ) {
 // Delete site transients
 if ( !function_exists( 'sl9_covid_19_delete_site_transients' ) ) {
   function sl9_covid_19_delete_site_transients() {
-    delete_site_transient( 'sl9_covid_19_locations' );
+    delete_site_option( 'sl9_covid_19_locations' );
     delete_site_transient( 'sl9_covid_19_location_schedule' );
   }
 }
@@ -527,7 +526,6 @@ if ( !function_exists( 'sl9_covid_19_location_todays_hours_shortcode' ) ) {
 // Delete site transients via scheduled events
 if ( !function_exists( 'sl9_covid_19_nightly_transient_clear' ) ) {
   function sl9_covid_19_nightly_transient_clear() {
-    sl9_covid_19_delete_site_transients();
     sl9_covid_19_flush_cache();
   }
 }
@@ -568,7 +566,7 @@ if ( !function_exists( 'sl9_covid_19_deactivation' ) ) {
     foreach ( $blogs as $key => $val ) {
       switch_to_blog( $val->blog_id );
 
-      wp_clear_scheduled_hook( 'sl9_covid_19_event_delete_transients' );
+      wp_unschedule_hook( 'sl9_covid_19_event_delete_transients' );
       // Flush cache
       sl9_covid_19_flush_cache();
 
