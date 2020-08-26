@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.10
+* Version:              1.0.11
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -275,9 +275,9 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
 
        if ( !empty( $location ) ) {
          $todays_hours = sl9_covid_19_location_get_todays_hours();
-         $kits_available = $location['coronavirus_test_kits_available'];
+         $kits_available = !empty( $location['coronavirus_test_kits_available'] ) ? $location['coronavirus_test_kits_available'] : $kits_available;
          $testing_hours = !empty( $location['coronavirus_testing_hours_today'] ) ? $location['coronavirus_testing_hours_today'] : $todays_hours;
-         $prereg_reqd = $location['coronavirus_preregistration_required'];
+         $prereg_reqd = !empty( $location['coronavirus_preregistration_required'] ) ? $location['coronavirus_preregistration_required'] : $prereg_reqd;
        } elseif ( $is_main_site ) {
          $kits_available = true;
        } else { return false; }
@@ -487,15 +487,19 @@ if ( !function_exists( 'sl9_covid_19_location_get_todays_hours' ) ) {
     $weekday = strtolower( date( 'D', $current_time ) ); // mon, sun, etc
 
     // Get the hourly testing times
-    $times = $location['coronavirus_current_weekly_hours'];
-    if ( empty( $times ) ) return false;
+    if ( !empty( $location['coronavirus_current_weekly_hours'] ) ) {
 
-    // Loop through each day/block and try to grab the daily hours or grab value for 'all'
-    foreach ( $times as $time ) {
-      if ( ( false !== strpos( $time['weekday'], $weekday ) ) || (  $time['weekday'] == 'all' ) ) {
-        $hours = $time['hours'][0];
-        if ( !empty( $hours ) ) {
-          $todays_hours = $hours['start'] . ' - ' . $hours['end'];
+      $times = $location['coronavirus_current_weekly_hours'];
+      if ( empty( $times ) ) return false;
+
+      // Loop through each day/block and try to grab the daily hours or grab value for 'all'
+      foreach ( $times as $time ) {
+        if ( ( false !== strpos( $time['weekday'], $weekday ) ) || (  $time['weekday'] == 'all' ) ) {
+          $hours = $time['hours'][0];
+          if ( !empty( $hours ) ) {
+            $todays_hours = $hours['start'] . ' - ' . $hours['end'];
+          }
+
         }
 
       }
@@ -526,19 +530,19 @@ if ( !function_exists( 'sl9_covid_19_location_todays_hours_shortcode' ) ) {
 // Delete site transients via scheduled events
 if ( !function_exists( 'sl9_covid_19_nightly_transient_clear' ) ) {
   function sl9_covid_19_nightly_transient_clear() {
+    sl9_covid_19_delete_site_transients();
     sl9_covid_19_flush_cache();
   }
 }
 
 if ( !function_exists( 'sl9_covid_19_flush_cache' ) ) {
   function sl9_covid_19_flush_cache() {
-    // Flush WP cache
-    if ( function_exists( 'wp_cache_flush' ) ) {
-      wp_cache_flush();
-    }
-    // Flush WP-Rocket cache
     if ( function_exists( 'rocket_clean_domain' ) ) {
+      // Flush WP-Rocket cache
       rocket_clean_domain();
+    } elseif ( function_exists( 'wp_cache_flush' ) ) {
+      // Flush WP cache
+      wp_cache_flush();
     }
   }
 }
