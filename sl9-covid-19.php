@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.12
+* Version:              1.0.13
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -87,8 +87,8 @@ if (!function_exists( 'sl9_covid_19_customizer' ) ) {
 // Get ACF custom fields individually since get_fields() breaks in multisite
 if ( !function_exists( 'sl9_covid_19_get_custom_fields' ) ) {
   function sl9_covid_19_get_custom_fields( $post_id = '' ) {
-    if ( !$post_id ) $post_id = $this->get_location_id();
-    if ( !function_exists( 'get_fields' ) ) return false;
+    if ( !$post_id ) return false;
+    if ( !function_exists( 'get_field' ) ) return false;
 
     $default_field_names = array(
       'coronavirus_test_kits_available',
@@ -121,7 +121,7 @@ if ( !function_exists( 'sl9_covid_19_get_locations' ) ) {
   function sl9_covid_19_get_locations() {
     global $blog_id;
 
-    if ( false === ( $locations = get_site_option( 'sl9_covid_19_locations' ) ) ) {
+    if ( false === ( $locations = get_site_option( 'sl9_covid_19_locations', false ) ) ) {
 
       $query_args = array(
         'post_type' => 'locations',
@@ -142,7 +142,7 @@ if ( !function_exists( 'sl9_covid_19_get_locations' ) ) {
       foreach ( $locations as $loc ) {
 
         // Get post meta
-        $post_meta = get_fields( $loc->ID );
+        $post_meta = sl9_covid_19_get_custom_fields( $loc->ID );
         $new_key = $loc->post_name;
         // Convert post object to array
         $locations_new[$new_key] = (array) $loc;
@@ -438,8 +438,8 @@ if ( !function_exists( 'sl9_covid_19_location_schedule' ) ) {
 
 // Delete site transients
 if ( !function_exists( 'sl9_covid_19_delete_site_transients' ) ) {
-  function sl9_covid_19_delete_site_transients() {
-    delete_site_option( 'sl9_covid_19_locations' );
+  function sl9_covid_19_delete_site_transients( $all = false ) {
+    if ( $all ) { delete_site_option( 'sl9_covid_19_locations' ); }
     delete_site_transient( 'sl9_covid_19_location_schedule' );
   }
 }
@@ -457,7 +457,7 @@ if ( !function_exists( 'sl9_covid_19_customizer_save_after' ) ) {
 if ( !function_exists( 'sl9_covid_19_save_post_locations' ) ) {
   function sl9_covid_19_save_post_locations( $post_ID, $post, $update ) {
     // Delete site transients
-    if ( is_main_site() ) { sl9_covid_19_delete_site_transients(); }
+    if ( is_main_site() ) { sl9_covid_19_delete_site_transients( true ); }
   }
   add_action( 'save_post_locations', 'sl9_covid_19_save_post_locations', 0, 3 );
 }
@@ -490,7 +490,7 @@ if ( !function_exists( 'sl9_covid_19_location_get_todays_hours' ) ) {
     if ( !empty( $location['coronavirus_current_weekly_hours'] ) ) {
 
       $times = $location['coronavirus_current_weekly_hours'];
-      if ( empty( $times ) ) return false;
+      if ( empty( $times ) || !is_array( $times ) ) return false;
 
       // Loop through each day/block and try to grab the daily hours or grab value for 'all'
       foreach ( $times as $time ) {
@@ -531,7 +531,6 @@ if ( !function_exists( 'sl9_covid_19_location_todays_hours_shortcode' ) ) {
 if ( !function_exists( 'sl9_covid_19_nightly_transient_clear' ) ) {
   function sl9_covid_19_nightly_transient_clear() {
     sl9_covid_19_flush_cache();
-    sl9_covid_19_delete_site_transients();
   }
 }
 
