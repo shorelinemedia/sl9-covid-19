@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.14
+* Version:              1.0.15
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -326,12 +326,21 @@ if ( !function_exists( 'sl9_covid_19_init' ) ) {
     // Custom message customizer control
     include_once( SL9_COVID_19_PATH . 'inc/class-wp-customize-message-control.php' );
 
+    $hooks = array(
+      'covid-banner',
+      'covid_banner',
+      'sl9_scriptscodes',
+      'wp_body_open'
+    );
+
     // Hook the shortcode output directly into the template depending on the hooks avaialable
-    if ( has_action( 'sl9_scriptscodes' ) ) {
-      add_action( 'sl9_scriptscodes', 'sl9_covid_19_add_banner_to_body' );
-    } elseif ( has_action( 'wp_body_open' ) ) {
-      add_action( 'wp_body_open', 'sl9_covid_19_add_banner_to_body' );
+    foreach ($hooks as $hook) {
+      if ( has_action( $hook ) ) {
+        add_action( $hook, 'sl9_covid_19_add_banner_to_body' );
+        break; // stop on the first matching hook
+      }
     }
+
   }
   add_action( 'init', 'sl9_covid_19_init' );
 }
