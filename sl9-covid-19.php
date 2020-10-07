@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.14
+* Version:              1.0.15
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -36,6 +36,19 @@ if (!function_exists( 'sl9_covid_19_customizer' ) ) {
       'capability' => 'edit_published_posts',
       'theme_supports' => '', // Rarely needed.
     ) );
+
+    $wp_customize->add_setting("sl9_covid_19_body_hook", array(
+      "default" => "sl9_scriptscodes",
+      "transport" => "refresh"
+    ));
+
+    $wp_customize->add_control( new WP_Customize_Control( $wp_customize, 'sl9_covid_19_body_hook', array(
+      'label'         => __( 'Banner Hook' ),
+      'description'   => __( 'What hook should we use to insert the banner? Not all templates/themes have the <code>wp_body_open</code> hook available. If you leave this hook blank, the banner will not be inserted. You can use multiple hooks by using commas: <code>sl9_scriptscodes, wp_footer</code>. Default:  <code>sl9_scriptscodes</code>' ),
+      'section'       => 'sl9_covid_19',
+      'settings'      => 'sl9_covid_19_body_hook',
+      'type'          => 'text'
+    ) ) );
 
     // Location sites only
     if ( !is_main_site() ) {
@@ -82,6 +95,13 @@ if (!function_exists( 'sl9_covid_19_customizer' ) ) {
 
   }
   add_action( 'customize_register', 'sl9_covid_19_customizer' );
+}
+
+// Get the body hook
+if ( !function_exists( 'sl9_covid_19_get_body_hook' ) ) {
+  function sl9_covid_19_get_body_hook() {
+    return get_theme_mod('sl9_covid_19_body_hook', 'sl9_scriptscodes');
+  }
 }
 
 // Get ACF custom fields individually since get_fields() breaks in multisite
@@ -326,12 +346,15 @@ if ( !function_exists( 'sl9_covid_19_init' ) ) {
     // Custom message customizer control
     include_once( SL9_COVID_19_PATH . 'inc/class-wp-customize-message-control.php' );
 
-    // Hook the shortcode output directly into the template depending on the hooks avaialable
-    if ( has_action( 'sl9_scriptscodes' ) ) {
-      add_action( 'sl9_scriptscodes', 'sl9_covid_19_add_banner_to_body' );
-    } elseif ( has_action( 'wp_body_open' ) ) {
-      add_action( 'wp_body_open', 'sl9_covid_19_add_banner_to_body' );
+    // Hook the shortcode output directly into the template based on Customizer settings
+    $body_hook = sl9_covid_19_get_body_hook();
+
+    $hooks = array_map('trim', explode(",", $body_hook) );
+
+    foreach ($hooks as $hook) {
+      add_action( $hook, 'sl9_covid_19_add_banner_to_body' );
     }
+
   }
   add_action( 'init', 'sl9_covid_19_init' );
 }
