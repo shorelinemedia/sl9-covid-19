@@ -3,7 +3,7 @@
 * Plugin Name:          Shoreline COVID 19
 * Plugin URI:           https://github.com/shorelinemedia/sl9-covid-19
 * Description:          Add a banner to a WP Multisite indicating availability of COVID 19 test kits
-* Version:              1.0.15
+* Version:              1.0.16
 * Author:               Shoreline Media
 * Author URI:           https://shoreline.media
 * License:              GNU General Public License v2
@@ -305,7 +305,7 @@ if ( !function_exists( 'sl9_covid_19_test_kits_banner_shortcode' ) ) {
        $testing_time = false === $todays_hours && false === $testing_hours ? 'today' : ( !empty( $testing_hours ) ? 'today from ' . $testing_hours : '' );
 
        // Set default text based on customizer checkbox
-       $default_text = false === $todays_hours || ( !empty( $testing_time ) && !empty( $testing_hours ) ) ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Check our locations for Coronavirus testing availability';
+       $default_text = false === $todays_hours || ( !empty( $testing_time ) && !empty( $testing_hours ) ) ? 'Coronavirus Testing <strong>Available ' . $testing_time . '!</strong> ' : 'Coronavirus Testing Available Today';
        // Use custom text if supplied, or else use default true/false text
        $text = $is_main_site ? '<strong>Coronavirus Testing Now Available:</strong> See our locations below to preregister' : ( !empty( $text ) ? $text : $default_text );
 
